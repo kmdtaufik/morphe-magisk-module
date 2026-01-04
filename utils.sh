@@ -51,7 +51,7 @@ get_rv_prebuilts() {
 	local cl_dir=${patches_src%/*}
 	cl_dir=${TEMP_DIR}/${cl_dir,,}-rv
 	[ -d "$cl_dir" ] || mkdir "$cl_dir"
-	for src_ver in "$cli_src CLI $cli_ver revanced-cli" "$patches_src Patches $patches_ver patches"; do
+	for src_ver in "$cli_src CLI $cli_ver morphe-cli" "$patches_src Patches $patches_ver patches"; do
 		set -- $src_ver
 		local src=$1 tag=$2 ver=${3-} fprefix=$4
 		local ext
@@ -59,7 +59,12 @@ get_rv_prebuilts() {
 			ext="jar"
 			local grab_cl=false
 		elif [ "$tag" = "Patches" ]; then
-			ext="rvp"
+			# MorpheApp uses .mpp extension instead of .rvp
+			if [[ "$src" == *"MorpheApp"* ]]; then
+				ext="mpp"
+			else
+				ext="rvp"
+			fi
 			local grab_cl=true
 		else abort unreachable; fi
 		local dir=${src%/*}
@@ -81,7 +86,7 @@ get_rv_prebuilts() {
 		fi
 
 		local url file tag_name name
-		file=$(find "$dir" -name "${fprefix}-${name_ver#v}.${ext}" -type f 2>/dev/null)
+		file=$(find "$dir" -name "${fprefix}*.${ext}" -type f 2>/dev/null)
 		if [ -z "$file" ]; then
 			local resp asset name
 			resp=$(gh_req "$rv_rel" -) || return 1
@@ -115,7 +120,7 @@ get_rv_prebuilts() {
 					cd "${file}-zip" || abort
 					zip -0rq "${CWD}/${file}" . || return 1
 				) >&2; then
-					echo >&2 "Patching revanced-integrations failed"
+					echo >&2 "Patching integrations failed"
 				fi
 				rm -r "${file}-zip" || :
 			fi
@@ -160,7 +165,8 @@ config_update() {
 			else
 				last_patches=$(gh_req "$rv_rel/tags/${ver}" -)
 			fi
-			if ! last_patches=$(jq -e -r '.assets[] | select(.name | endswith("rvp")) | .name' <<<"$last_patches"); then
+			# Support both .rvp (ReVanced) and .mpp (MorpheApp) extensions
+			if ! last_patches=$(jq -e -r '.assets[] | select(.name | endswith("rvp") or endswith("mpp")) | .name' <<<"$last_patches"); then
 				abort oops
 			fi
 			if [ "$last_patches" ]; then
