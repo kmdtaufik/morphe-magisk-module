@@ -31,7 +31,7 @@ DEF_PATCHES_VER=$(toml_get "$main_config_t" patches-version) || DEF_PATCHES_VER=
 DEF_CLI_VER=$(toml_get "$main_config_t" cli-version) || DEF_CLI_VER="latest"
 DEF_PATCHES_SRC=$(toml_get "$main_config_t" patches-source) || DEF_PATCHES_SRC="MorpheApp/morphe-patches"
 DEF_CLI_SRC=$(toml_get "$main_config_t" cli-source) || DEF_CLI_SRC="MorpheApp/morphe-cli"
-DEF_RV_BRAND=$(toml_get "$main_config_t" rv-brand) || DEF_RV_BRAND="Morphe"
+DEF_morphe_brand=$(toml_get "$main_config_t" morphe-brand) || DEF_morphe_brand="Morphe"
 DEF_DPI_LIST=$(toml_get "$main_config_t" dpi) || DEF_DPI_LIST="nodpi anydpi"
 mkdir -p "$TEMP_DIR" "$BUILD_DIR"
 
@@ -48,7 +48,7 @@ if [ "$ENABLE_MAGISK_UPDATE" = true ] && [ -z "${GITHUB_REPOSITORY-}" ]; then
 fi
 if ((COMPRESSION_LEVEL > 9)) || ((COMPRESSION_LEVEL < 0)); then abort "compression-level must be within 0-9"; fi
 
-rm -rf revanced-magisk/bin/*/tmp.*
+rm -rf morphe-magisk/bin/*/tmp.*
 if [ "$(echo "$TEMP_DIR"/*-rv/changelog.md)" ]; then
 	: >"$TEMP_DIR"/*-rv/changelog.md || :
 fi
@@ -78,12 +78,12 @@ for table_name in $(toml_get_table_names); do
 	cli_src=$(toml_get "$t" cli-source) || cli_src=$DEF_CLI_SRC
 	cli_ver=$(toml_get "$t" cli-version) || cli_ver=$DEF_CLI_VER
 
-	if ! RVP="$(get_rv_prebuilts "$cli_src" "$cli_ver" "$patches_src" "$patches_ver")"; then
+	if ! RVP="$(get_morphe_prebuilts "$cli_src" "$cli_ver" "$patches_src" "$patches_ver")"; then
 		abort "could not download rv prebuilts"
 	fi
-	read -r rv_cli_jar rv_patches_jar <<<"$RVP"
+	read -r rv_cli_jar morphe_patches_jar <<<"$RVP"
 	app_args[cli]=$rv_cli_jar
-	app_args[ptjar]=$rv_patches_jar
+	app_args[ptjar]=$morphe_patches_jar
 	if [[ -v cliriplib[${app_args[cli]}] ]]; then app_args[riplib]=${cliriplib[${app_args[cli]}]}; else
 		if [[ $(java -jar "${app_args[cli]}" patch 2>&1) == *rip-lib* ]]; then
 			cliriplib[${app_args[cli]}]=true
@@ -94,7 +94,7 @@ for table_name in $(toml_get_table_names); do
 		fi
 	fi
 	if [ "${app_args[riplib]}" = "true" ] && [ "$(toml_get "$t" riplib)" = "false" ]; then app_args[riplib]=false; fi
-	app_args[rv_brand]=$(toml_get "$t" rv-brand) || app_args[rv_brand]=$DEF_RV_BRAND
+	app_args[morphe_brand]=$(toml_get "$t" morphe-brand) || app_args[morphe_brand]=$DEF_morphe_brand
 
 	app_args[excluded_patches]=$(toml_get "$t" excluded-patches) || app_args[excluded_patches]=""
 	if [ -n "${app_args[excluded_patches]}" ] && [[ ${app_args[excluded_patches]} != *'"'* ]]; then abort "patch names inside excluded-patches must be quoted"; fi
@@ -142,7 +142,7 @@ for table_name in $(toml_get_table_names); do
 		module_prop_name_b=${app_args[module_prop_name]}
 		app_args[module_prop_name]="${module_prop_name_b}-arm64"
 		idx=$((idx + 1))
-		build_rv "$(declare -p app_args)" &
+		build_morphe "$(declare -p app_args)" &
 		app_args[table]="$table_name (arm-v7a)"
 		app_args[arch]="arm-v7a"
 		app_args[module_prop_name]="${module_prop_name_b}-arm"
@@ -151,7 +151,7 @@ for table_name in $(toml_get_table_names); do
 			idx=$((idx - 1))
 		fi
 		idx=$((idx + 1))
-		build_rv "$(declare -p app_args)" &
+		build_morphe "$(declare -p app_args)" &
 	else
 		if [ "${app_args[arch]}" = "arm64-v8a" ]; then
 			app_args[module_prop_name]="${app_args[module_prop_name]}-arm64"
@@ -159,7 +159,7 @@ for table_name in $(toml_get_table_names); do
 			app_args[module_prop_name]="${app_args[module_prop_name]}-arm"
 		fi
 		idx=$((idx + 1))
-		build_rv "$(declare -p app_args)" &
+		build_morphe "$(declare -p app_args)" &
 	fi
 done
 wait
@@ -168,7 +168,7 @@ if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then abort "All builds failed."; fi
 
 log "\nInstall [MicroG-RE](https://github.com/WSTxda/MicroG-RE/releases) for non-root YouTube and YT Music APKs"
 log "Use [zygisk-detach](https://github.com/j-hc/zygisk-detach) to detach root Morphe YouTube and YT Music from Play Store"
-log "\n[morphe-magisk-module](https://github.com/j-hc/revanced-magisk-module)\n"
+log "\n[morphe-magisk-module](https://github.com/kmdtaufik/morphe-magisk-module)\n"
 log "$(cat "$TEMP_DIR"/*-rv/changelog.md)"
 
 SKIPPED=$(cat "$TEMP_DIR"/skipped 2>/dev/null || :)

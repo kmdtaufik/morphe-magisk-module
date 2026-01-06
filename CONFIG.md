@@ -12,8 +12,8 @@ apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
 
 ## More about other options:
 
-There exists an example below with all defaults shown and all the keys explicitly set.  
-**All keys are optional** (except download urls) and are assigned to their default values if not set explicitly.  
+There exists an example below with all defaults shown and all the keys explicitly set.
+**All keys are optional** (except download urls) and are assigned to their default values if not set explicitly.
 
 ```toml
 parallel-jobs = 1                    # amount of cores to use for parallel patching, if not set $(nproc) is used
@@ -24,7 +24,7 @@ dpi = "nodpi anydpi 120-640dpi"      # dpi packages to be searched in order. def
 patches-source = "revanced/revanced-patches" # where to fetch patches bundle from. default: "revanced/revanced-patches"
 cli-source = "j-hc/revanced-cli"             # where to fetch cli from. default: "j-hc/revanced-cli"
 # options like cli-source can also set per app
-rv-brand = "ReVanced Extended" # rebrand from 'ReVanced' to something different. default: "ReVanced"
+morphe-brand = "ReVanced Extended" # rebrand from 'ReVanced' to something different. default: "ReVanced"
 
 patches-version = "v2.160.0" # 'latest', 'dev', or a version number. default: "latest"
 cli-version = "v5.0.0"       # 'latest', 'dev', or a version number. default: "latest"

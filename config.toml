@@ -2,7 +2,7 @@ enable-magisk-update = true # set this to false if you do not want to receive up
 parallel-jobs = 1
 
 # add 'enabled = false' for not patching a specific app or remove it from the config
-# see https://github.com/j-hc/revanced-magisk-module/blob/main/CONFIG.md for more detailed explanations
+# see https://github.com/j-hc/morphe-magisk-module/blob/main/CONFIG.md for more detailed explanations
 
 # you can use rvmm-config-gen to generate a config
 
@@ -13,7 +13,7 @@ included-patches = ""
 version = "auto"
 patches-source = "MorpheApp/morphe-patches"
 cli-source = "MorpheApp/morphe-cli"
-rv-brand = "Morphe"
+morphe-brand = "Morphe"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
 uptodown-dlurl = "https://youtube.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.google.android.youtube"
@@ -23,7 +23,7 @@ build-mode = "both"
 arch = "both"
 patches-source = "MorpheApp/morphe-patches"
 cli-source = "MorpheApp/morphe-cli"
-rv-brand = "Morphe"
+morphe-brand = "Morphe"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube-music"
 uptodown-dlurl = "https://youtube-music.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.google.android.apps.youtube.music"
@@ -42,13 +42,13 @@ enabled = false
 uptodown-dlurl = "https://spotify.en.uptodown.com/android"
 archive-dlurl = "https://archive.org/download/jhc-apks/apks/com.spotify.music"
 
-# https://github.com/j-hc/revanced-magisk-module/issues/554
+# https://github.com/j-hc/morphe-magisk-module/issues/554
 [Music-Extended]
 enabled = false
 app-name = "Music"
 patches-source = "inotia00/revanced-patches"
 cli-source = "inotia00/revanced-cli"
-rv-brand = "ReVanced Extended"
+morphe-brand = "ReVanced Extended"
 build-mode = "both"
 arch = "both"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube-music"
@@ -58,7 +58,7 @@ enabled = false
 app-name = "YouTube"
 patches-source = "inotia00/revanced-patches"
 cli-source = "inotia00/revanced-cli"
-rv-brand = "ReVanced Extended"
+morphe-brand = "ReVanced Extended"
 build-mode = "both"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
 

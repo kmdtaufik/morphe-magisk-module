@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-MODULE_TEMPLATE_DIR="revanced-magisk"
+MODULE_TEMPLATE_DIR="morphe-magisk"
 CWD=$(pwd)
 TEMP_DIR="temp"
 BIN_DIR="bin"
@@ -45,7 +45,7 @@ abort() {
 	exit 1
 }
 
-get_rv_prebuilts() {
+get_morphe_prebuilts() {
 	local cli_src=$1 cli_ver=$2 patches_src=$3 patches_ver=$4
 	pr "Getting prebuilts (${patches_src%/*})" >&2
 	local cl_dir=${patches_src%/*}
@@ -60,11 +60,7 @@ get_rv_prebuilts() {
 			local grab_cl=false
 		elif [ "$tag" = "Patches" ]; then
 			# MorpheApp uses .mpp extension instead of .rvp
-			if [[ "$src" == *"MorpheApp"* ]]; then
-				ext="mpp"
-			else
-				ext="rvp"
-			fi
+			ext="mpp"
 			local grab_cl=true
 		else abort unreachable; fi
 		local dir=${src%/*}
@@ -255,7 +251,7 @@ get_patch_last_supported_ver() {
 			return
 		fi
 	fi
-	if ! op=$(java -jar "$rv_cli_jar" list-versions "$rv_patches_jar" -f "$pkg_name" 2>&1 | tail -n +3 | awk '{$1=$1}1'); then
+	if ! op=$(java -jar "$rv_cli_jar" list-versions "$morphe_patches_jar" -f "$pkg_name" 2>&1 | tail -n +3 | awk '{$1=$1}1'); then
 		epr "list-versions: '$op'"
 		return 1
 	fi
@@ -448,9 +444,9 @@ get_archive_pkg_name() { echo "$__ARCHIVE_PKG_NAME__"; }
 # --------------------------------------------------
 
 patch_apk() {
-	local stock_input=$1 patched_apk=$2 patcher_args=$3 rv_cli_jar=$4 rv_patches_jar=$5
-	local cmd="env -u GITHUB_REPOSITORY java -jar $rv_cli_jar patch $stock_input --purge -o $patched_apk -p $rv_patches_jar --keystore=ks.keystore \
---keystore-entry-password=123456789 --keystore-password=123456789 --signer=jhc --keystore-entry-alias=jhc $patcher_args"
+	local stock_input=$1 patched_apk=$2 patcher_args=$3 rv_cli_jar=$4 morphe_patches_jar=$5
+	local cmd="env -u GITHUB_REPOSITORY java -jar $rv_cli_jar patch $stock_input --purge -o $patched_apk -p $morphe_patches_jar --keystore=ks.keystore \
+--keystore-entry-password=123456789 --keystore-password=123456789 --signer=kmdtaufik --keystore-entry-alias=kmdtaufik $patcher_args"
 	if [ "$OS" = Android ]; then cmd+=" --custom-aapt2-binary=${AAPT2}"; fi
 	pr "$cmd"
 	if eval "$cmd"; then [ -f "$patched_apk" ]; else
@@ -469,7 +465,7 @@ check_sig() {
 	fi
 }
 
-build_rv() {
+build_morphe() {
 	eval "declare -A args=${1#*=}"
 	local version="" pkg_name=""
 	local mode_arg=${args[build_mode]} version_mode=${args[version]}
@@ -503,7 +499,7 @@ build_rv() {
 		return 0
 	fi
 	local list_patches
-	list_patches=$(java -jar "$rv_cli_jar" list-patches "$rv_patches_jar" -f "$pkg_name" -v -p 2>&1)
+	list_patches=$(java -jar "$rv_cli_jar" list-patches "$morphe_patches_jar" -f "$pkg_name" -v -p 2>&1)
 
 	local get_latest_ver=false
 	if [ "$version_mode" = auto ]; then
@@ -572,16 +568,16 @@ build_rv() {
 	spoof_video_patch=$(grep "^Name: " <<<"$list_patches" | grep -i "Spoof Video" || :) spoof_video_patch=${spoof_video_patch#*: }
 
 	local patcher_args patched_apk build_mode
-	local rv_brand_f=${args[rv_brand],,}
-	rv_brand_f=${rv_brand_f// /-}
+	local morphe_brand_f=${args[morphe_brand],,}
+	morphe_brand_f=${morphe_brand_f// /-}
 	if [ "${args[patcher_args]}" ]; then p_patcher_args+=("${args[patcher_args]}"); fi
 	for build_mode in "${build_mode_arr[@]}"; do
 		patcher_args=("${p_patcher_args[@]}")
 		pr "Building '${table}' in '$build_mode' mode"
 		if [ -n "$microg_patch" ]; then
-			patched_apk="${TEMP_DIR}/${app_name_l}-${rv_brand_f}-${version_f}-${arch_f}-${build_mode}.apk"
+			patched_apk="${TEMP_DIR}/${app_name_l}-${morphe_brand_f}-${version_f}-${arch_f}-${build_mode}.apk"
 		else
-			patched_apk="${TEMP_DIR}/${app_name_l}-${rv_brand_f}-${version_f}-${arch_f}.apk"
+			patched_apk="${TEMP_DIR}/${app_name_l}-${morphe_brand_f}-${version_f}-${arch_f}.apk"
 		fi
 		if [ -n "$microg_patch" ]; then
 			if [ "$build_mode" = apk ]; then
@@ -615,7 +611,7 @@ build_rv() {
 			fi
 		fi
 		if [ "$build_mode" = apk ]; then
-			local apk_output="${BUILD_DIR}/${app_name_l}-${rv_brand_f}-v${version_f}-${arch_f}.apk"
+			local apk_output="${BUILD_DIR}/${app_name_l}-${morphe_brand_f}-v${version_f}-${arch_f}.apk"
 			mv -f "$patched_apk" "$apk_output"
 			pr "Built ${table} (non-root): '${apk_output}'"
 			continue
@@ -627,16 +623,16 @@ build_rv() {
 
 		module_config "$base_template" "$pkg_name" "$version" "$arch"
 
-		local rv_patches_ver="${rv_patches_jar##*-}"
+		local morphe_patches_ver="${morphe_patches_jar##*-}"
 		module_prop \
 			"${args[module_prop_name]}" \
-			"${app_name} ${args[rv_brand]}" \
-			"${version} (patches ${rv_patches_ver%%.rvp})" \
-			"${app_name} ${args[rv_brand]} Magisk module" \
+			"${app_name} ${args[morphe_brand]}" \
+			"${version} (patches ${morphe_patches_ver%%.rvp})" \
+			"${app_name} ${args[morphe_brand]} Magisk module" \
 			"https://raw.githubusercontent.com/${GITHUB_REPOSITORY-}/update/${upj}" \
 			"$base_template"
 
-		local module_output="${app_name_l}-${rv_brand_f}-magisk-v${version_f}-${arch_f}.zip"
+		local module_output="${app_name_l}-${morphe_brand_f}-magisk-v${version_f}-${arch_f}.zip"
 		pr "Packing module ${table}"
 		cp -f "$patched_apk" "${base_template}/base.apk"
 		if [ "${args[include_stock]}" = true ]; then cp -f "$stock_apk" "${base_template}/${pkg_name}.apk"; fi
@@ -666,7 +662,7 @@ module_prop() {
 name=${2}
 version=v${3}
 versionCode=${NEXT_VER_CODE}
-author=j-hc
+author=kmdtaufik
 description=${4}" >"${6}/module.prop"
 
 	if [ "$ENABLE_MAGISK_UPDATE" = true ]; then echo "updateJson=${5}" >>"${6}/module.prop"; fi

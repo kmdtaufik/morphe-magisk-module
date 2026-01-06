@@ -1,6 +1,6 @@
 #!/system/bin/sh
 MODDIR=${0%/*}
-RVPATH=/data/adb/rvhc/${MODDIR##*/}.apk
+MRPATH=/data/adb/morphe/${MODDIR##*/}.apk
 . "$MODDIR/config"
 
 err() {
@@ -37,11 +37,11 @@ run() {
 		mp=${line#* } mp=${mp%% *}
 		umount -l "${mp%%\\*}"
 	done
-	if ! chcon u:object_r:apk_data_file:s0 "$RVPATH"; then
+	if ! chcon u:object_r:apk_data_file:s0 "$MRPATH"; then
 		err "apk not found"
 		return
 	fi
-	mount -o bind "$RVPATH" "$BASEPATH/base.apk"
+	mount -o bind "$MRPATH" "$BASEPATH/base.apk"
 	am force-stop "$PKG_NAME"
 	[ -f "$MODDIR/err" ] && mv -f "$MODDIR/err" "$MODDIR/module.prop"
 }
