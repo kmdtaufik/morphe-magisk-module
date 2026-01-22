@@ -87,7 +87,7 @@ get_morphe_prebuilts() {
 			local resp asset name
 			resp=$(gh_req "$rv_rel" -) || return 1
 			tag_name=$(jq -r '.tag_name' <<<"$resp")
-			asset=$(jq -e -r ".assets[] | select(.name | endswith(\"$ext\"))" <<<"$resp") || return 1
+			asset=$(jq -e -r "[.assets[] | select(.name | endswith(\"$ext\") and (test(\"dev\") | not))] | .[0] // [.assets[] | select(.name | endswith(\"$ext\"))][0]" <<<"$resp") || return 1
 			url=$(jq -r .url <<<"$asset")
 			name=$(jq -r .name <<<"$asset")
 			file="${dir}/${name}"
