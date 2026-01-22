@@ -110,7 +110,7 @@ get_morphe_prebuilts() {
 				if ! (
 					mkdir -p "${file}-zip" || return 1
 					unzip -qo "${file}" -d "${file}-zip" || return 1
-					java -cp "${BIN_DIR}/paccer.jar:${BIN_DIR}/dexlib2.jar" com.jhc.Main "${file}-zip/extensions/shared.rve" "${file}-zip/extensions/shared-patched.rve" || return 1
+					java -cp "${BIN_DIR}/paccer.jar:${BIN_DIR}/dexlib2.jar" com.jhc.Main "${file}-zip/extensions/shared.mpe" "${file}-zip/extensions/shared-patched.mpe" || return 1
 					mv -f "${file}-zip/extensions/shared-patched.mpe" "${file}-zip/extensions/shared.mpe" || return 1
 					rm "${file}" || return 1
 					cd "${file}-zip" || abort
