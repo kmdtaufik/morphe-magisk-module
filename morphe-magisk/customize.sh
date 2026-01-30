@@ -175,6 +175,8 @@ nohup cmd package compile --reset "$PKG_NAME" >/dev/null 2>&1 &
 
 rm -rf "${MODPATH:?}/bin" "$MODPATH/$PKG_NAME.apk"
 
+
 ui_print "* Done"
 ui_print "  by kmdtaufik (github.com/kmdtaufik)"
+ui_print "* if you are using zygisk assistant then give root access to youtube."
 ui_print " "
