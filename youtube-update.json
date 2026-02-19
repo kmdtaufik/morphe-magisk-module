@@ -1,6 +1,6 @@
 {
-  "version": "v20.40.45 (patches 1.13.0.mpp)",
-  "versionCode": 8,
-  "zipUrl": "https://github.com/kmdtaufik/morphe-magisk-module/releases/download/8/youtube-morphe-magisk-v20.40.45-all.zip",
+  "version": "v20.40.45 (patches 1.14.0.mpp)",
+  "versionCode": 9,
+  "zipUrl": "https://github.com/kmdtaufik/morphe-magisk-module/releases/download/9/youtube-morphe-magisk-v20.40.45-all.zip",
   "changelog": "https://raw.githubusercontent.com/kmdtaufik/morphe-magisk-module/update/build.md"
 }
