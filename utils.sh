@@ -253,7 +253,7 @@ get_patch_last_supported_ver() {
 			return
 		fi
 	fi
-	if ! op=$(java -jar "$rv_cli_jar" list-versions "$morphe_patches_jar" -f "$pkg_name" 2>&1 | tail -n +3 | awk '{$1=$1}1'); then
+	if ! op=$(java -jar "$rv_cli_jar" list-versions --patches "$morphe_patches_jar" -f "$pkg_name" 2>&1 | tail -n +3 | awk '{$1=$1}1'); then
 		epr "list-versions: '$op'"
 		return 1
 	fi
@@ -447,7 +447,7 @@ get_archive_pkg_name() { echo "$__ARCHIVE_PKG_NAME__"; }
 
 patch_apk() {
 	local stock_input=$1 patched_apk=$2 patcher_args=$3 rv_cli_jar=$4 morphe_patches_jar=$5
-	local cmd="env -u GITHUB_REPOSITORY java -jar $rv_cli_jar patch $stock_input --purge -o $patched_apk -p $morphe_patches_jar --keystore=ks.keystore \
+	local cmd="env -u GITHUB_REPOSITORY java -jar $rv_cli_jar patch $stock_input --purge -o $patched_apk --patches $morphe_patches_jar --keystore=ks.keystore \
 --keystore-entry-password=123456789 --keystore-password=123456789 --signer=kmdtaufik --keystore-entry-alias=kmdtaufik $patcher_args"
 	if [ "$OS" = Android ]; then cmd+=" --custom-aapt2-binary=${AAPT2}"; fi
 	pr "$cmd"
@@ -501,7 +501,7 @@ build_morphe() {
 		return 0
 	fi
 	local list_patches
-	list_patches=$(java -jar "$rv_cli_jar" list-patches "$morphe_patches_jar" -f "$pkg_name" -v -p 2>&1)
+	list_patches=$(java -jar "$rv_cli_jar" list-patches --patches "$morphe_patches_jar" -f "$pkg_name" -v -p 2>&1)
 
 	local get_latest_ver=false
 	if [ "$version_mode" = auto ]; then
