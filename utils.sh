@@ -501,7 +501,7 @@ build_morphe() {
 		return 0
 	fi
 	local list_patches
-	list_patches=$(java -jar "$rv_cli_jar" list-patches "$morphe_patches_jar" -f "$pkg_name" -v -p 2>&1)
+	list_patches=$(java -jar "$rv_cli_jar" list-patches --patches "$morphe_patches_jar" -f "$pkg_name" -v -p 2>&1)
 
 	local get_latest_ver=false
 	if [ "$version_mode" = auto ]; then
