@@ -85,7 +85,6 @@ for table_name in $(toml_get_table_names); do
 	app_args[cli]=$rv_cli_jar
 	app_args[ptjar]=$morphe_patches_jar
 	if [[ -v cliriplib[${app_args[cli]}] ]]; then app_args[riplib]=${cliriplib[${app_args[cli]}]}; else
-		local patch_help
 		patch_help=$(java -jar "${app_args[cli]}" patch -h 2>&1 || true)
 		if [[ $patch_help == *striplibs* ]]; then
 			cliriplib[${app_args[cli]}]=true
