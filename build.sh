@@ -85,12 +85,20 @@ for table_name in $(toml_get_table_names); do
 	app_args[cli]=$rv_cli_jar
 	app_args[ptjar]=$morphe_patches_jar
 	if [[ -v cliriplib[${app_args[cli]}] ]]; then app_args[riplib]=${cliriplib[${app_args[cli]}]}; else
-		if [[ $(java -jar "${app_args[cli]}" patch 2>&1) == *rip-lib* ]]; then
+		local patch_help
+		patch_help=$(java -jar "${app_args[cli]}" patch -h 2>&1 || true)
+		if [[ $patch_help == *striplibs* ]]; then
 			cliriplib[${app_args[cli]}]=true
 			app_args[riplib]=true
+			app_args[riplib_flag]="--striplibs"
+		elif [[ $patch_help == *rip-lib* ]]; then
+			cliriplib[${app_args[cli]}]=true
+			app_args[riplib]=true
+			app_args[riplib_flag]="--rip-lib"
 		else
 			cliriplib[${app_args[cli]}]=false
 			app_args[riplib]=false
+			app_args[riplib_flag]=""
 		fi
 	fi
 	if [ "${app_args[riplib]}" = "true" ] && [ "$(toml_get "$t" riplib)" = "false" ]; then app_args[riplib]=false; fi
