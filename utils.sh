@@ -253,7 +253,7 @@ get_patch_last_supported_ver() {
 			return
 		fi
 	fi
-	if ! op=$(java -jar "$rv_cli_jar" list-versions "$morphe_patches_jar" -f "$pkg_name" 2>&1 | tail -n +3 | awk '{$1=$1}1'); then
+	if ! op=$(java -jar "$rv_cli_jar" list-versions --patches "$morphe_patches_jar" -f "$pkg_name" 2>&1 | tail -n +3 | awk '{$1=$1}1'); then
 		epr "list-versions: '$op'"
 		return 1
 	fi
@@ -501,7 +501,7 @@ build_morphe() {
 		return 0
 	fi
 	local list_patches
-	list_patches=$(java -jar "$rv_cli_jar" list-patches --patches "$morphe_patches_jar" -f "$pkg_name" -v -p 2>&1)
+	list_patches=$(java -jar "$rv_cli_jar" list-patches --patches "$morphe_patches_jar" -f "$pkg_name" -v -p 2>&1) || true
 
 	local get_latest_ver=false
 	if [ "$version_mode" = auto ]; then
