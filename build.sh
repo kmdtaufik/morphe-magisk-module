@@ -69,7 +69,7 @@ for table_name in $(toml_get_table_names); do
 	vtf "$enabled" "enabled"
 	if [ "$enabled" = false ]; then continue; fi
 	if ((idx >= PARALLEL_JOBS)); then
-		wait -n
+		wait -n || true
 		idx=$((idx - 1))
 	fi
 
@@ -176,7 +176,7 @@ for table_name in $(toml_get_table_names); do
 		build_morphe "$(declare -p app_args)" &
 	fi
 done
-wait
+wait || true
 rm -rf temp/tmp.*
 if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then abort "All builds failed."; fi
 

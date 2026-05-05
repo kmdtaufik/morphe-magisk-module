@@ -253,14 +253,15 @@ get_patch_last_supported_ver() {
 			return
 		fi
 	fi
-	if ! op=$(java -jar "$rv_cli_jar" list-versions --patches "$morphe_patches_jar" -f "$pkg_name" 2>&1 | tail -n +3 | awk '{$1=$1}1'); then
-		epr "list-versions: '$op'"
+	local raw_op
+	raw_op=$(java -jar "$rv_cli_jar" list-versions --patches "$morphe_patches_jar" -f "$pkg_name" 2>&1) || true
+	if grep -qi "any" <<<"$raw_op" && ! grep -q "(" <<<"$raw_op"; then return; fi
+	op=$(grep '([0-9]' <<<"$raw_op" | sed 's/(.*//' | awk '{$1=$1}1')
+	if [ -z "$op" ]; then
+		epr "list-versions: could not parse output: '$raw_op'"
 		return 1
 	fi
-	if [ "$op" = "Any" ]; then return; fi
-	pcount=$(head -1 <<<"$op") pcount=${pcount#*(} pcount=${pcount% *}
-	if [ -z "$pcount" ]; then abort "unreachable: '$pcount'"; fi
-	grep -F "($pcount patch" <<<"$op" | sed 's/ (.* patch.*//' | get_highest_ver || return 1
+	get_highest_ver <<<"$op" || return 1
 }
 
 isoneof() {
@@ -507,8 +508,10 @@ build_morphe() {
 	if [ "$version_mode" = auto ]; then
 		if ! version=$(get_patch_last_supported_ver "$list_patches" "$pkg_name" \
 			"${args[included_patches]}" "${args[excluded_patches]}" "${args[exclusive_patches]}"); then
-			exit 1
-		elif [ -z "$version" ]; then get_latest_ver=true; fi
+			epr "Failed to resolve version for ${table}, falling back to latest"
+			version=""
+		fi
+		if [ -z "$version" ]; then get_latest_ver=true; fi
 	elif isoneof "$version_mode" latest beta; then
 		get_latest_ver=true
 		p_patcher_args+=("-f")
