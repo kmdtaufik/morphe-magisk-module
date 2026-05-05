@@ -107,11 +107,13 @@ get_morphe_prebuilts() {
 		if [ "$tag" = "Patches" ]; then
 			if [ $grab_cl = true ]; then echo -e "[Changelog](https://github.com/${src}/releases/tag/${tag_name})\n" >>"${cl_dir}/changelog.md"; fi
 			if [ "$REMOVE_RV_INTEGRATIONS_CHECKS" = true ]; then
+				local extensions_ext
+				extensions_ext=$(unzip -l "${file}" "extensions/shared.*" | grep -o "shared\..*") extensions_ext="${extensions_ext#*.}"
 				if ! (
 					mkdir -p "${file}-zip" || return 1
 					unzip -qo "${file}" -d "${file}-zip" || return 1
-					java -cp "${BIN_DIR}/paccer.jar:${BIN_DIR}/dexlib2.jar" com.jhc.Main "${file}-zip/extensions/shared.mpe" "${file}-zip/extensions/shared-patched.mpe" || return 1
-					mv -f "${file}-zip/extensions/shared-patched.mpe" "${file}-zip/extensions/shared.mpe" || return 1
+					java -cp "${BIN_DIR}/paccer.jar:${BIN_DIR}/dexlib2.jar" com.jhc.Main "${file}-zip/extensions/shared.${extensions_ext}" "${file}-zip/extensions/shared-patched.${extensions_ext}" || return 1
+					mv -f "${file}-zip/extensions/shared-patched.${extensions_ext}" "${file}-zip/extensions/shared.${extensions_ext}" || return 1
 					rm "${file}" || return 1
 					cd "${file}-zip" || abort
 					zip -0rq "${CWD}/${file}" . || return 1
@@ -209,7 +211,7 @@ _req() {
 		mv -f "$dlp" "$op"
 	fi
 }
-req() { _req "$1" "$2" -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0"; }
+req() { _req "$1" "$2" -H "User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"; }
 gh_req() { _req "$1" "$2" -H "$GH_HEADER"; }
 gh_dl() {
 	if [ ! -f "$1" ]; then
@@ -251,14 +253,15 @@ get_patch_last_supported_ver() {
 			return
 		fi
 	fi
-	if ! op=$(java -jar "$rv_cli_jar" list-versions "$morphe_patches_jar" -f "$pkg_name" 2>&1 | tail -n +3 | awk '{$1=$1}1'); then
-		epr "list-versions: '$op'"
+	local raw_op
+	raw_op=$(java -jar "$rv_cli_jar" list-versions --patches "$morphe_patches_jar" -f "$pkg_name" 2>&1) || true
+	if grep -qi "any" <<<"$raw_op" && ! grep -q "(" <<<"$raw_op"; then return; fi
+	op=$(grep '([0-9]' <<<"$raw_op" | sed 's/(.*//' | awk '{$1=$1}1')
+	if [ -z "$op" ]; then
+		epr "list-versions: could not parse output: '$raw_op'"
 		return 1
 	fi
-	if [ "$op" = "Any" ]; then return; fi
-	pcount=$(head -1 <<<"$op") pcount=${pcount#*(} pcount=${pcount% *}
-	if [ -z "$pcount" ]; then abort "unreachable: '$pcount'"; fi
-	grep -F "($pcount patch" <<<"$op" | sed 's/ (.* patch.*//' | get_highest_ver || return 1
+	get_highest_ver <<<"$op" || return 1
 }
 
 isoneof() {
@@ -445,7 +448,7 @@ get_archive_pkg_name() { echo "$__ARCHIVE_PKG_NAME__"; }
 
 patch_apk() {
 	local stock_input=$1 patched_apk=$2 patcher_args=$3 rv_cli_jar=$4 morphe_patches_jar=$5
-	local cmd="env -u GITHUB_REPOSITORY java -jar $rv_cli_jar patch $stock_input --purge -o $patched_apk -p $morphe_patches_jar --keystore=ks.keystore \
+	local cmd="env -u GITHUB_REPOSITORY java -jar $rv_cli_jar patch $stock_input --purge -o $patched_apk --patches $morphe_patches_jar --keystore=ks.keystore \
 --keystore-entry-password=123456789 --keystore-password=123456789 --signer=kmdtaufik --keystore-entry-alias=kmdtaufik $patcher_args"
 	if [ "$OS" = Android ]; then cmd+=" --custom-aapt2-binary=${AAPT2}"; fi
 	pr "$cmd"
@@ -499,14 +502,16 @@ build_morphe() {
 		return 0
 	fi
 	local list_patches
-	list_patches=$(java -jar "$rv_cli_jar" list-patches "$morphe_patches_jar" -f "$pkg_name" -v -p 2>&1)
+	list_patches=$(java -jar "$rv_cli_jar" list-patches --patches "$morphe_patches_jar" -f "$pkg_name" -v -p 2>&1) || true
 
 	local get_latest_ver=false
 	if [ "$version_mode" = auto ]; then
 		if ! version=$(get_patch_last_supported_ver "$list_patches" "$pkg_name" \
 			"${args[included_patches]}" "${args[excluded_patches]}" "${args[exclusive_patches]}"); then
-			exit 1
-		elif [ -z "$version" ]; then get_latest_ver=true; fi
+			epr "Failed to resolve version for ${table}, falling back to latest"
+			version=""
+		fi
+		if [ -z "$version" ]; then get_latest_ver=true; fi
 	elif isoneof "$version_mode" latest beta; then
 		get_latest_ver=true
 		p_patcher_args+=("-f")
@@ -540,7 +545,7 @@ build_morphe() {
 		for dl_p in archive apkmirror uptodown; do
 			if [ -z "${args[${dl_p}_dlurl]}" ]; then continue; fi
 			pr "Downloading '${table}' from ${dl_p}"
-			if ! isoneof $dl_p "${tried_dl[@]}"; then get_${dl_p}_resp "${args[${dl_p}_dlurl]}"; fi
+			if ! isoneof $dl_p "${tried_dl[@]}"; then get_${dl_p}_resp "${args[${dl_p}_dlurl]}" || true; fi
 			if ! dl_${dl_p} "${args[${dl_p}_dlurl]}" "$version" "$stock_apk" "$arch" "${args[dpi]}" "$get_latest_ver"; then
 				epr "ERROR: Could not download '${table}' from ${dl_p} with version '${version}', arch '${arch}', dpi '${args[dpi]}'"
 				continue
@@ -593,14 +598,31 @@ build_morphe() {
 			patcher_args+=("-d \"${spoof_video_patch}\"")
 		fi
 		if [ "${args[riplib]}" = true ]; then
-			patcher_args+=("--rip-lib x86_64 --rip-lib x86")
-			if [ "$build_mode" = module ]; then
-				patcher_args+=("--rip-lib arm64-v8a --rip-lib armeabi-v7a --unsigned")
+			if [ "${args[riplib_flag]}" = "--striplibs" ]; then
+				if [ "$build_mode" = module ]; then
+					# Module doesn't need libs (stock app provides them via mount)
+					patcher_args+=("--unsigned")
+				else
+					if [ "$arch" = "arm64-v8a" ]; then
+						patcher_args+=("--striplibs arm64-v8a")
+					elif [ "$arch" = "arm-v7a" ]; then
+						patcher_args+=("--striplibs armeabi-v7a")
+					elif [ "$arch" = "x86" ]; then
+						patcher_args+=("--striplibs x86")
+					elif [ "$arch" = "x86_64" ]; then
+						patcher_args+=("--striplibs x86_64")
+					fi
+				fi
 			else
-				if [ "$arch" = "arm64-v8a" ]; then
-					patcher_args+=("--rip-lib armeabi-v7a")
-				elif [ "$arch" = "arm-v7a" ]; then
-					patcher_args+=("--rip-lib arm64-v8a")
+				patcher_args+=("--rip-lib x86_64 --rip-lib x86")
+				if [ "$build_mode" = module ]; then
+					patcher_args+=("--rip-lib arm64-v8a --rip-lib armeabi-v7a --unsigned")
+				else
+					if [ "$arch" = "arm64-v8a" ]; then
+						patcher_args+=("--rip-lib armeabi-v7a")
+					elif [ "$arch" = "arm-v7a" ]; then
+						patcher_args+=("--rip-lib arm64-v8a")
+					fi
 				fi
 			fi
 		fi

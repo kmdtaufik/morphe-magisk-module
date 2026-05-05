@@ -26,7 +26,7 @@ COMPRESSION_LEVEL=$(toml_get "$main_config_t" compression-level) || COMPRESSION_
 if ! PARALLEL_JOBS=$(toml_get "$main_config_t" parallel-jobs); then
 	if [ "$OS" = Android ]; then PARALLEL_JOBS=1; else PARALLEL_JOBS=$(nproc); fi
 fi
-REMOVE_RV_INTEGRATIONS_CHECKS=$(toml_get "$main_config_t" remove-rv-integrations-checks) || REMOVE_RV_INTEGRATIONS_CHECKS="true"
+REMOVE_RV_INTEGRATIONS_CHECKS=$(toml_get "$main_config_t" remove-rv-integrations-checks) || REMOVE_RV_INTEGRATIONS_CHECKS="false"
 DEF_PATCHES_VER=$(toml_get "$main_config_t" patches-version) || DEF_PATCHES_VER="latest"
 DEF_CLI_VER=$(toml_get "$main_config_t" cli-version) || DEF_CLI_VER="latest"
 DEF_PATCHES_SRC=$(toml_get "$main_config_t" patches-source) || DEF_PATCHES_SRC="MorpheApp/morphe-patches"
@@ -60,6 +60,7 @@ gh_dl "${MODULE_TEMPLATE_DIR}/bin/x86/cmpr" "https://github.com/j-hc/cmpr/releas
 gh_dl "${MODULE_TEMPLATE_DIR}/bin/x64/cmpr" "https://github.com/j-hc/cmpr/releases/latest/download/cmpr-x86_64"
 
 declare -A cliriplib
+declare -A cliriplib_flag
 idx=0
 for table_name in $(toml_get_table_names); do
 	if [ -z "$table_name" ]; then continue; fi
@@ -68,7 +69,7 @@ for table_name in $(toml_get_table_names); do
 	vtf "$enabled" "enabled"
 	if [ "$enabled" = false ]; then continue; fi
 	if ((idx >= PARALLEL_JOBS)); then
-		wait -n
+		wait -n || true
 		idx=$((idx - 1))
 	fi
 
@@ -84,13 +85,26 @@ for table_name in $(toml_get_table_names); do
 	read -r rv_cli_jar morphe_patches_jar <<<"$RVP"
 	app_args[cli]=$rv_cli_jar
 	app_args[ptjar]=$morphe_patches_jar
-	if [[ -v cliriplib[${app_args[cli]}] ]]; then app_args[riplib]=${cliriplib[${app_args[cli]}]}; else
-		if [[ $(java -jar "${app_args[cli]}" patch 2>&1) == *rip-lib* ]]; then
+	if [[ -v cliriplib[${app_args[cli]}] ]]; then
+		app_args[riplib]=${cliriplib[${app_args[cli]}]}
+		app_args[riplib_flag]=${cliriplib_flag[${app_args[cli]}]}
+	else
+		patch_help=$(java -jar "${app_args[cli]}" patch -h 2>&1 || true)
+		if [[ $patch_help == *striplibs* ]]; then
 			cliriplib[${app_args[cli]}]=true
+			cliriplib_flag[${app_args[cli]}]="--striplibs"
 			app_args[riplib]=true
+			app_args[riplib_flag]="--striplibs"
+		elif [[ $patch_help == *rip-lib* ]]; then
+			cliriplib[${app_args[cli]}]=true
+			cliriplib_flag[${app_args[cli]}]="--rip-lib"
+			app_args[riplib]=true
+			app_args[riplib_flag]="--rip-lib"
 		else
 			cliriplib[${app_args[cli]}]=false
+			cliriplib_flag[${app_args[cli]}]=""
 			app_args[riplib]=false
+			app_args[riplib_flag]=""
 		fi
 	fi
 	if [ "${app_args[riplib]}" = "true" ] && [ "$(toml_get "$t" riplib)" = "false" ]; then app_args[riplib]=false; fi
@@ -162,7 +176,7 @@ for table_name in $(toml_get_table_names); do
 		build_morphe "$(declare -p app_args)" &
 	fi
 done
-wait
+wait || true
 rm -rf temp/tmp.*
 if [ -z "$(ls -A1 "${BUILD_DIR}")" ]; then abort "All builds failed."; fi
 
