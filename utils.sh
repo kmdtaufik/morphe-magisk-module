@@ -600,8 +600,8 @@ build_morphe() {
 		if [ "${args[riplib]}" = true ]; then
 			if [ "${args[riplib_flag]}" = "--striplibs" ]; then
 				if [ "$build_mode" = module ]; then
-					# Module strips all libraries
-					patcher_args+=("--striplibs none" "--unsigned")
+					# Module doesn't need libs (stock app provides them via mount)
+					patcher_args+=("--unsigned")
 				else
 					if [ "$arch" = "arm64-v8a" ]; then
 						patcher_args+=("--striplibs arm64-v8a")
