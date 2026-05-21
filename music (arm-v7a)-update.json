@@ -1,6 +1,6 @@
 {
-  "version": "v8.47.56 (patches 1.28.0.mpp)",
-  "versionCode": 16,
-  "zipUrl": "https://github.com/kmdtaufik/morphe-magisk-module/releases/download/16/music-morphe-magisk-v8.47.56-arm-v7a.zip",
+  "version": "v8.47.56 (patches 1.29.0.mpp)",
+  "versionCode": 17,
+  "zipUrl": "https://github.com/kmdtaufik/morphe-magisk-module/releases/download/17/music-morphe-magisk-v8.47.56-arm-v7a.zip",
   "changelog": "https://raw.githubusercontent.com/kmdtaufik/morphe-magisk-module/update/build.md"
 }
